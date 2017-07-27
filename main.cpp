@@ -17,16 +17,19 @@
 const GLint WIDTH = 800, HEIGHT = 600;
 
 const GLchar *vertexShaderSource = "#version 330 core\n"
-"layout ( location = 0 ) in vec3 position;\n"
+"layout (location = 0) in vec3 aPos;\n"
+"layout (location = 1) in vec3 aColor;\n"
+"out vec3 ourColor;\n"
 "void main() {\n"
-"gl_Position = vec4(position.x, position.y, position.z, 1.0);\n"
+"gl_Position = vec4(aPos, 1.0);\n"
+"ourColor = aColor;\n"
 "}";
 
 const GLchar *fragmentShaderSource = "#version 330 core\n"
-"out vec4 color;\n"
-"uniform vec4 ourColor;\n"
+"out vec4 FragColor;\n"
+"in vec3 ourColor;\n"
 "void main() {\n"
-"color = ourColor;\n"
+"FragColor = vec4(ourColor, 1.0f);\n"
 "}";
 
 int main() {
@@ -129,10 +132,10 @@ int main() {
   };
    */
   static const GLfloat g_vertex_buffer_data[] = {
-    0.5f,  0.5f, 0.0f,  // top right
-    0.5f, -0.5f, 0.0f,  // bottom right
-    -0.5f, -0.5f, 0.0f,  // bottom left
-    -0.5f,  0.5f, 0.0f   // top left
+    0.5f,  0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  // top right
+    0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  // bottom right
+    -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,  // bottom left
+    -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 0.0f   // top left
   };
   unsigned int indices[] = {  // note that we start from 0!
     0, 1, 3,   // first triangle
@@ -151,9 +154,13 @@ int main() {
   GLuint vertexArrayObject;
   glGenVertexArrays(1, &vertexArrayObject);
   glBindVertexArray(vertexArrayObject);
-  glEnableVertexAttribArray(0);
   glBindBuffer(GL_ARRAY_BUFFER, vertexArrayObject);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+  // position attribute
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(0);
+  // color attribute
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+  glEnableVertexAttribArray(1);
 
   unsigned int EBO;
   glGenBuffers(1, &EBO);
@@ -180,18 +187,6 @@ int main() {
     glClear(GL_COLOR_BUFFER_BIT);
 
     glUseProgram(shaderProgram);
-
-    // retrieve the running time in seconds via glfwGetTime()
-    float timeValue = glfwGetTime();
-    // vary the color in the range of 0.0 - 1.0 by using the sin function
-    float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
-    // query for the location of the ourColor uniform using glGetUniformLocation and the shader program
-    // If glGetUniformLocationreturns -1, it could not find the location
-    int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
-    // updating a uniform does require you to first use the program (by calling glUseProgram), because it sets the uniform on the currently active shader program
-    glUseProgram(shaderProgram);
-    // set the uniform value using the glUniform4f
-    glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
 
     // now render the shape
     glBindVertexArray(vertexArrayObject);
